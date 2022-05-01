@@ -33,21 +33,21 @@ class World:
         
         return map
         
-    def step(self, x, y, vector, state):
+    def step(self, x, y, action, state):
         
         to_x, to_y = x, y
         
         # 行動に従って座標を更新
-        if vector == self.actions['up']:
+        if action == self.actions['up']:
             to_y -= 1
-        elif vector == self.actions['down']:
+        elif action == self.actions['down']:
             to_y += 1
-        elif vector == self.actions['left']:
+        elif action == self.actions['left']:
             to_x -= 1
-        elif vector == self.actions['right']:
+        elif action == self.actions['right']:
             to_x += 1
         
-        if self._is_wall(to_x, to_y):
+        if self.is_wall(to_x, to_y):
             return (x, y), state, self.rewards['wall'], True, False
         
         agent_state = self.get_state(to_x, to_y)
@@ -82,7 +82,7 @@ class World:
                 
         return tuple(view)
         
-    def _is_wall(self, x, y):
+    def is_wall(self, x, y):
         
         if self.map[y, x] == self.objects['wall']:
             return True
