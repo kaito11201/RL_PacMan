@@ -9,7 +9,7 @@ class World:
         self.ini_map = self.create_map(width, height, agents_pos)
         self.map = copy.deepcopy(self.ini_map)
         self.dot_size = dot_size
-        self.dot_n = None
+        self.dot_n = self._count_dot()
         self.rewards = rewards
         
         self._count_dot()
@@ -47,7 +47,7 @@ class World:
         elif action == self.actions['right']:
             to_x += 1
         
-        if self.is_wall(to_x, to_y):
+        if self._is_wall(to_x, to_y):
             return (x, y), state, self.rewards['wall'], True, False
         
         agent_state = self.get_state(to_x, to_y)
@@ -59,7 +59,7 @@ class World:
     def _count_dot(self):
         # マップにあるドットの数を数える関数
         # 戻り値: <class 'int'>
-        self.dot_n = np.count_nonzero(self.map == self.objects['dot'])
+        return np.count_nonzero(self.map == self.objects['dot'])
     
     def get_map(self):
         # マップを渡す関数
@@ -71,7 +71,7 @@ class World:
     
     def get_state(self, x, y, scope=1):
         # agentの視界を渡す関数
-        view = [self._count_dot()]
+        view = []
         
         for h in range(-scope, scope + 1):
             for w in range(-scope, scope + 1):
@@ -82,7 +82,7 @@ class World:
                 
         return tuple(view)
         
-    def is_wall(self, x, y):
+    def _is_wall(self, x, y):
         
         if self.map[y, x] == self.objects['wall']:
             return True
@@ -96,9 +96,9 @@ class World:
     def _is_completed(self):
         # ドットを全て回収できたか確認する関数
         
-        self._count_dot()
+        dot_n = self._count_dot()
         
-        if self.dot_n == 0:
+        if dot_n == 0:
             return True
         else:
             return False

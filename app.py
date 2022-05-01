@@ -86,29 +86,29 @@ class App:
             self.world.to_none(x, y)
             
             # Qテーブルから行動を選択
-            agent.act()
-            print(agent.vector)
+            vector = agent.act()
+            pos, state, reward, is_wall, is_completed = self.world.step(x, y, vector, agent.get_state())
+            
+            agent.observe(state, reward)
+            
+            if is_wall:
+                return 0
         
         # エージェントが向いている方向を取得
         vector = agent.get_vector()
-        # print(vector)
+        
         # 方向に従って移動
         if vector == self.actions['up']:
             dot_y -= 1
-            y -= 1
         elif vector == self.actions['down']:
             dot_y += 1
-            y += 1
         elif vector == self.actions['left']:
             dot_x -= 1
-            x -= 1
         elif vector == self.actions['right']:
             dot_x += 1
-            x += 1
-        
-        if not self.world.is_wall(x, y):
-            # 移動先をエージェントに渡す
-            agent.set_dot_pos((dot_x, dot_y))
+            
+        # 移動先をエージェントに渡す
+        agent.set_dot_pos((dot_x, dot_y))
         
     def set_world(self, world):
         self.world = world

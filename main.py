@@ -5,9 +5,9 @@ import numpy as np
 
 #-------実験の設定------#
 # エピソード数
-EPISODE = 200
+EPISODE = 300
 # ステップ数
-STEP = 100
+STEP = 200
 # マップサイズ
 MAP_W = 10
 MAP_H = 10
@@ -17,7 +17,7 @@ OBJECTS.update({v: k for k, v in OBJECTS.items()})
 # 報酬
 REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -100}
 # エージェント数
-AGENT_N = 2
+AGENT_N = 1
 # エージェントの初期位置(エージェント数に合わせる)
 AGENTS_POS = [(1,1), (8,8)]
 # エネミー数
@@ -26,7 +26,7 @@ ENEMY_N = 0
 
 #----エージェントの設定----#
 # 探索率を算出する係数
-K = .999
+K = .9999
 # 学習率
 ALPHA = .1
 # 割引率
@@ -69,14 +69,17 @@ def main():
         
         for step in range(STEP):
             for agent in agents:
+                x, y = agent.pos[0], agent.pos[1]
+                
                 # agentの足元を何も無い状態にする
-                world.to_none(agent.pos[0], agent.pos[1])
+                world.to_none(x, y)
                 
                 # 行動を選択
                 action = agent.act()
                 
                 # エージェントが移動
-                pos, state, reward, is_wall, is_end_episode = world.step(agent.pos[0], agent.pos[1], action, agent.state)
+                
+                pos, state, reward, is_wall, is_end_episode = world.step(x, y, action, agent.state)
                 
                 # 状態と報酬の観測
                 agent.observe(state, reward)
@@ -94,8 +97,6 @@ def main():
         world.reset()
         for agent in agents:
             agent.reset()
-    
-    print(agents[0].q_table)
     
     app = App(world, agents, MAP_W, MAP_H, DOT_SIZE,
               FPS, OBJECTS, OBJ_POS, ACTIONS, EPISODE, STEP)
