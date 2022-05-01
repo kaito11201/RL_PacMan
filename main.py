@@ -66,7 +66,6 @@ def main():
         
         for agent in agents:
             agent.compute_epsilon(episode)
-            print(agent.epsilon)
         
         for step in range(STEP):
             for agent in agents:

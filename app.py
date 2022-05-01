@@ -78,33 +78,38 @@ class App:
     def _agent_move(self, agent):
         
         dot_x, dot_y = agent.get_dot_pos()
-        vector = agent.get_vector()
+        x, y = self._to_world_pos(dot_x, dot_y)
         
-        # 行動選択
         if self._is_match_dot(dot_x, dot_y):
             
-            x, y = self._cordinate_transform(dot_x, dot_y)
+            # エージェントがいる座標を何もない状態にする
             self.world.to_none(x, y)
-            vector = agent.act()
-            agent.set_vector(vector)
-            pos, state, reward, is_wall, self.is_episode_end = self.world.step(x, y, vector, agent.get_state())
-            agent.observe(state, reward)
-            self.step += 1
             
-            if is_wall:
-                return 0
+            # Qテーブルから行動を選択
+            agent.act()
+            print(agent.vector)
         
+        # エージェントが向いている方向を取得
+        vector = agent.get_vector()
+        # print(vector)
+        # 方向に従って移動
         if vector == self.actions['up']:
             dot_y -= 1
+            y -= 1
         elif vector == self.actions['down']:
             dot_y += 1
+            y += 1
         elif vector == self.actions['left']:
             dot_x -= 1
+            x -= 1
         elif vector == self.actions['right']:
             dot_x += 1
-
-        agent.set_dot_pos((dot_x, dot_y))
-    
+            x += 1
+        
+        if not self.world.is_wall(x, y):
+            # 移動先をエージェントに渡す
+            agent.set_dot_pos((dot_x, dot_y))
+        
     def set_world(self, world):
         self.world = world
     
@@ -123,9 +128,13 @@ class App:
         else:
             return False
     
-    def _cordinate_transform(self, x, y):
-        x = int(x / 8)
-        y = int(y / 8)
+    def _to_world_pos(self, x, y):
+        # ドットでの座標を二次元リストの座標に変換する関数
+        
+        # 切り上げ
+        x = x // self.dot_size
+        y = y // self.dot_size
+        
         return x, y
     
     def _reset(self):

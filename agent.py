@@ -57,6 +57,7 @@ class Agent:
         else:
             action = np.argmax(self.q_table[self.state])
         
+        self.vector = action
         self.previous_action = action
         return action
     
