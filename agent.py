@@ -3,15 +3,7 @@ from msvcrt import kbhit
 import numpy as np
 
 class Agent:
-    def __init__(
-            self,
-            alpha=.2,
-            gamma=.99,
-            k = .999,
-            actions=None,
-            pos=None,
-            observation=None,
-            dot_size=None):
+    def __init__(self, alpha, gamma, k, actions, pos, dot_size, observation):
         
         self.alpha = alpha
         self.gamma = gamma
@@ -23,14 +15,16 @@ class Agent:
         self.vector = None
         
         self.pos = pos
-        self.ini_pos = self.pos
-        self.dot_pos = pos[0] * dot_size, pos[1] * dot_size
+        self.ini_pos = pos
+        self.dot_pos = (pos[0] * dot_size, pos[1] * dot_size)
         self.ini_dot_pos = self.dot_pos
-        
         self.state = observation
         self.ini_state = observation
+        
         self.previous_state = None
         self.previous_action = None
+        
+        # Q値を表すQテーブル
         self.q_table = self._create_q_table()
     
     def _create_q_table(self):
@@ -65,7 +59,7 @@ class Agent:
         # 次の状態への移行と報酬の観測を行う関数
         
         next_state = next_state
-        if next_state not in self.q_table:  # 始めて訪れる状態であれば
+        if next_state not in self.q_table:
             self.q_table[next_state] = np.repeat(0.0, len(self.actions))
 
         self.previous_state = copy.deepcopy(self.state)
@@ -97,9 +91,6 @@ class Agent:
     
     def get_vector(self):
         return self.vector
-    
-    def set_vector(self, vector):
-        self.vector = vector
     
     def get_state(self):
         return self.state
