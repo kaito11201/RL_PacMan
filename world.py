@@ -3,18 +3,17 @@ import numpy as np
 import copy
 
 class World:
-    def __init__(self, width, height, dot_size, objects, agents_pos, actions, rewards):
+    def __init__(self, width, height, objects, actions, rewards):
         self.objects = objects
         self.actions = actions
-        self.ini_map = self.create_map(width, height, agents_pos)
+        self.ini_map = self.create_map(width, height)
         self.map = copy.deepcopy(self.ini_map)
-        self.dot_size = dot_size
         self.dot_n = self._count_dot()
         self.rewards = rewards
         
         self._count_dot()
         
-    def create_map(self, width, height, agents_pos):
+    def create_map(self, width, height):
         # 初期状態のマップを作成する関数
         
         map = np.ones(width * height).reshape((height, width))
@@ -24,12 +23,6 @@ class World:
         map[height-1, :] = self.objects['wall']
         map[:, 0] = self.objects['wall']
         map[:, width-1] = self.objects['wall']
-        
-        # agentを配置
-        # for pos in agents_pos:
-        #     map[pos[1], pos[0]] = self.objects['agent']
-        
-        # 敵を配置
         
         return map
         
@@ -102,10 +95,7 @@ class World:
             return True
         else:
             return False
-        
-    def update(self):
-        pass
-    
+
     def reset(self):
         self.map = copy.deepcopy(self.ini_map)
     
@@ -114,8 +104,3 @@ class World:
     
     def to_agent(self, x, y):
         self.map[y, x] = self.objects['agent']
-        
-    def _cordinate_transform(self, x, y):
-        # pyxelの座標を二次元マップの座標に変換する関数
-        
-        return x / self.dot_size, y / self.dot_size

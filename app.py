@@ -3,22 +3,18 @@ import pyxel
 import numpy as np
 
 class App:
-    def __init__(self, world, agents, map_w, map_h, dot_size, fps, objects, obj_pos, actions, episode, step):
-        
+    def __init__(self, world, agents, map_w, map_h, dot_size, fps, objects, obj_pos, actions):
+        self.world = world
+        self.agents = agents
         self.map_w = map_w
         self.map_h = map_h
         self.dot_size = dot_size
         self.objects = objects
         self.obj_pos = obj_pos
         self.actions = actions
-        self.world = world
-        self.agents = agents
         
-        self.limit_episode = episode
-        self.limit_step = step * 2
-        self.episode = 0
-        self.step = 0
-        self.is_episode_end = False
+        # マップ上のドットがすべて回収されたかどうか表す
+        self.is_completed = False
         
         # pyxelの設定
         pyxel.init(map_w*dot_size, map_h*dot_size, fps=fps)
@@ -27,38 +23,32 @@ class App:
         pyxel.load('pacman.pyxres')
         
     def _update(self):
-        if self.step == self.limit_step:
-            self._reset()
-            self.step = 0
-            self.episode += 1
+        # エージェントの座標などを更新する関数
         
-        if self.episode == self.limit_episode:
-            pyxel.quit()
-        
-        # agentの描画
+        # エージェントの移動
         for agent in self.agents:
             self._agent_move(agent)
         
-        
-        
+        # 「q」が押されれば終了
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
-            
-        
     
     def _draw(self):
+        # マップやエージェントを毎フレーム描画する関数
         
         # 背景を真っ黒にする
         pyxel.cls(0)
-        self._draw_map()
-        for agent in self.agents:
-            self._draw_agent(agent.dot_pos)
         
-        pyxel.text(self.dot_size, 0, self._get_text(), 0)
+        # マップの描画
+        self._draw_map()
+        
+        # エージェントの描画
+        for agent in self.agents:
+            x, y = agent.get_dot_pos()
+            self._draw_agent(x, y)
         
     def _draw_map(self):
-        
-        # マップの取得
+        # マップを描画する関数
         
         for y in range(self.map_h):
             for x in range(self.map_w):
@@ -69,18 +59,24 @@ class App:
                           self.obj_pos[self.objects[self.world.map[y,x]]][1],
                           self.dot_size, self.dot_size)
     
-    def _draw_agent(self, pos):
-        pyxel.blt(pos[0], pos[1], 0,
+    def _draw_agent(self, x, y):
+        # エージェントを描画する関数
+        
+        pyxel.blt(x, y, 0,
                   self.obj_pos['agent'][0],
                   self.obj_pos['agent'][1],
                   self.dot_size, self.dot_size)
         
     def _agent_move(self, agent):
+        # エージェントが移動する関数
         
+        # ドット上でのエージェントの座標を取得
         dot_x, dot_y = agent.get_dot_pos()
-        x, y = self._to_world_pos(dot_x, dot_y)
         
         if self._is_match_dot(dot_x, dot_y):
+            
+            # 座標を取得
+            x, y = self._to_world_pos(dot_x, dot_y)
             
             # エージェントがいる座標を何もない状態にする
             self.world.to_none(x, y)
@@ -89,9 +85,11 @@ class App:
             vector = agent.act()
             pos, state, reward, is_wall, is_completed = self.world.step(x, y, vector, agent.get_state())
             
+            # 状態と報酬の観測
             agent.observe(state, reward)
             
-            if is_wall:
+            # 「移動先が壁」or「マップ上のドットを全て回収した」場合移動しない
+            if is_wall or is_completed:
                 return 0
         
         # エージェントが向いている方向を取得
@@ -110,16 +108,6 @@ class App:
         # 移動先をエージェントに渡す
         agent.set_dot_pos((dot_x, dot_y))
         
-    def set_world(self, world):
-        self.world = world
-    
-    def set_agents(self, agent):
-        self.agent = agent
-        
-    def loop(self):
-        # pyxelの実行
-        pyxel.run(self._update, self._draw)
-        
     def _is_match_dot(self, x, y):
         # pyxelの座標と二次元リストの座標が一致しているか返す関数
         
@@ -130,17 +118,11 @@ class App:
     
     def _to_world_pos(self, x, y):
         # ドットでの座標を二次元リストの座標に変換する関数
-        
-        # 切り上げ
         x = x // self.dot_size
         y = y // self.dot_size
         
         return x, y
     
-    def _reset(self):
-        self.world.reset()
-        for agent in self.agents:
-            agent.reset()
-    
-    def _get_text(self):
-        return f"episode:{self.episode} step:{self.step}"
+    def loop(self):
+        # pyxelを実行する関数
+        pyxel.run(self._update, self._draw)
