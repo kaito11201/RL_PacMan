@@ -1,14 +1,14 @@
-from re import A
 from world import World
 from agent import Agent
 from app import App
 import numpy as np
+import matplotlib.pyplot as plt
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 300
+EPISODE = 1000
 # ステップ数
-STEP = 200
+STEP = 100
 # マップサイズ
 MAP_W = 10
 MAP_H = 10
@@ -21,6 +21,8 @@ REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1}
 AGENT_N = 1
 # エージェントの初期位置(エージェント数に合わせる)
 AGENTS_POS = [(1,1), (8,8)]
+# エージェントの視界
+AGENT_SCOPE = 1
 
 #-----------------------------エージェントの設定------------------------------#
 # 探索率の係数(1に近い方が良い)
@@ -42,14 +44,14 @@ OBJ_POS = {'none': (8,8), 'dot': (8,16), 'wall': (0,16), 'agent': (0,0)}
 
 def main():
     # 環境の生成
-    world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS)
+    world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS, AGENT_SCOPE)
     
     # エージェントの生成
     agents = []
     for n in range(AGENT_N):
         agents.append(Agent(ALPHA, GAMMA, K, ACTIONS, AGENTS_POS[n], DOT_SIZE,
                             world.get_state(AGENTS_POS[n][0], AGENTS_POS[n][1])))
-        
+    
     # 実験
     for episode in range(EPISODE - 1):
         
@@ -58,8 +60,8 @@ def main():
             agent.compute_epsilon(episode)
         
         for step in range(STEP):
-            
             for agent in agents:
+                
                 x, y = agent.pos[0], agent.pos[1]
                 
                 # agentの足元を何も無い状態にする
@@ -69,7 +71,7 @@ def main():
                 action = agent.act()
                 
                 # エージェントが移動
-                pos, state, reward, is_wall, is_end_episode = world.step(x, y, action, agent.state)
+                pos, state, reward, is_wall, is_completed = world.step(x, y, action, agent.get_state())
                 
                 # 状態と報酬の観測
                 agent.observe(state, reward)
@@ -79,15 +81,15 @@ def main():
                 world.to_agent(pos[0], pos[1])
             
             # マップ上のドットをすべて回収していればエピソード終了
-            if is_end_episode:
+            if is_completed:
                 break
-            
+        
         # 初期化
         for agent in agents:
             agent.reset()
 
         world.reset()
-    
+        
     # pyxelで最後のエピソードを描画
     app = App(world, agents, MAP_W, MAP_H, DOT_SIZE,
               FPS, OBJECTS, OBJ_POS, ACTIONS)

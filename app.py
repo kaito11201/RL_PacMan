@@ -20,7 +20,7 @@ class App:
         pyxel.init(map_w*dot_size, map_h*dot_size, fps=fps)
         
         # ドット絵をロード
-        pyxel.load('pacman.pyxres')
+        pyxel.load('dot_pictures/pacman.pyxres')
         
     def _update(self):
         # エージェントの座標などを更新する関数
@@ -28,10 +28,6 @@ class App:
         # エージェントの移動
         for agent in self.agents:
             self._agent_move(agent)
-        
-        # 「q」が押されれば終了
-        if pyxel.btnp(pyxel.KEY_Q):
-            pyxel.quit()
     
     def _draw(self):
         # マップやエージェントを毎フレーム描画する関数
@@ -52,7 +48,6 @@ class App:
         
         for y in range(self.map_h):
             for x in range(self.map_w):
-                
                 # 各オブジェクトの描画
                 pyxel.blt(x * self.dot_size, y * self.dot_size, 0,
                           self.obj_pos[self.objects[self.world.map[y,x]]][0],
@@ -73,16 +68,20 @@ class App:
         # ドット上でのエージェントの座標を取得
         dot_x, dot_y = agent.get_dot_pos()
         
+        # ドット上での座標と、リスト上での座標が一致しているか判定
         if self._is_match_dot(dot_x, dot_y):
             
-            # 座標を取得
+            # リスト上での座標を取得
             x, y = self._to_world_pos(dot_x, dot_y)
             
             # エージェントがいる座標を何もない状態にする
             self.world.to_none(x, y)
             
-            # Qテーブルから行動を選択
+            # Qテーブルから方向を選択
             vector = agent.act()
+            agent.set_vector(vector)
+            
+            # エージェントの移動
             pos, state, reward, is_wall, is_completed = self.world.step(x, y, vector, agent.get_state())
             
             # 状態と報酬の観測
@@ -109,8 +108,7 @@ class App:
         agent.set_dot_pos((dot_x, dot_y))
         
     def _is_match_dot(self, x, y):
-        # pyxelの座標と二次元リストの座標が一致しているか返す関数
-        
+        # ドット上での座標とリスト上での座標が一致しているか返す関数
         if x % self.dot_size == 0 and y % self.dot_size == 0:
             return True
         else:
@@ -120,7 +118,6 @@ class App:
         # ドットでの座標を二次元リストの座標に変換する関数
         x = x // self.dot_size
         y = y // self.dot_size
-        
         return x, y
     
     def loop(self):
