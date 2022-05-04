@@ -2,13 +2,13 @@ from world import World
 from agent import Agent
 from app import App
 import numpy as np
-import matplotlib.pyplot as plt
+import csv
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 1000
+EPISODE = 300
 # ステップ数
-STEP = 100
+STEP = 150
 # マップサイズ
 MAP_W = 10
 MAP_H = 10
@@ -16,13 +16,13 @@ MAP_H = 10
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
 # 報酬
-REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1}
+REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'all': 50}
 # エージェント数
 AGENT_N = 1
 # エージェントの初期位置(エージェント数に合わせる)
 AGENTS_POS = [(1,1), (8,8)]
 # エージェントの視界
-AGENT_SCOPE = 1
+AGENT_SCOPE = 2
 
 #-----------------------------エージェントの設定------------------------------#
 # 探索率の係数(1に近い方が良い)
@@ -89,7 +89,9 @@ def main():
             agent.reset()
 
         world.reset()
-        
+    
+    result(agents)
+    
     # pyxelで最後のエピソードを描画
     app = App(world, agents, MAP_W, MAP_H, DOT_SIZE,
               FPS, OBJECTS, OBJ_POS, ACTIONS)
@@ -97,8 +99,16 @@ def main():
     
     return 0
 
-def result():
-    pass
+def result(agents):
+    # 学習結果の出力をする関数
+    
+    
+    # 各エージェントのQテーブルを出力
+    for i, agent in enumerate(agents):
+        with open(f'result/q_tables/q_table({i}).csv', 'w') as f:
+            writer = csv.writer(f)
+            for k, v in agent.q_table.items():
+                writer.writerow([k, v])
 
 if __name__ == "__main__":
     main()

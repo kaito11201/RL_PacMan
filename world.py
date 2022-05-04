@@ -4,6 +4,8 @@ import copy
 
 class World:
     def __init__(self, width, height, objects, actions, rewards, scope):
+        self.width = width
+        self.height = height
         self.objects = objects
         self.actions = actions
         self.rewards = rewards
@@ -35,12 +37,14 @@ class World:
         if self._is_wall(to_x, to_y):
             return (x, y), state, self.rewards['wall'], True, False
         
-        # 移動先の状態と報酬を取得
-        agent_state = self.get_state(to_x, to_y)
-        reward = self._get_reward(to_x, to_y)
-        
         # マップにあるドットをすべて回収したか判定
         is_completed = self._is_completed()
+        
+        # 移動先の状態と報酬を取得
+        agent_state = self.get_state(to_x, to_y)
+        reward = self._get_reward(to_x, to_y, is_completed)
+    
+        
         
         return (to_x, to_y), agent_state, reward, False, is_completed
     
@@ -57,21 +61,40 @@ class World:
         
         state = []
         
+        # マップに残っているドットの数
+        dot_n = self._count_dot()
+        
+        # エージェントの座標
+        pos = (x, y)
+        
         # エージェントの視界
         view = []
         for h in range(-self.scope, self.scope + 1):
             for w in range(-self.scope, self.scope + 1):
-                view.append(self.map[y+h, x+w])
+                if self._is_within_range(x+w, y+h):
+                    view.append(self.map[y+h, x+w])
+                else:
+                    view.append(None)
+                    
         view = tuple(view)
         
         # 各情報を追加
+        # state.append(dot_n)
+        # state.append(pos)
         state.append(view)
         
         return tuple(state)
     
-    def _get_reward(self, x, y):
+    def _get_reward(self, x, y, is_completed):
         # 報酬を渡す関数
-        return self.rewards[self.objects[self.map[y, x]]]
+        
+        reward = 0
+        
+        # ドットをすべて回収した場合追加
+        if is_completed:
+            reward += self.rewards['all']
+        reward += self.rewards[self.objects[self.map[y, x]]]
+        return reward
     
     def _is_completed(self):
         # ドットを全て回収できたか確認する関数
@@ -112,6 +135,15 @@ class World:
         # 受け取った座標上にあるオブジェクトをエージェントに更新する関数
         self.map[y, x] = self.objects['agent']
     
+    def _is_within_range(self, x, y):
+        # 受け取った座標がマップの範囲内か返す関数
+        
+        if x < 0 or x >= self.width:
+            return False
+        elif y < 0 or y >= self.height:
+            return False
+        return True
+        
     def reset(self):
         # マップを初期状態にする関数
         self.map = copy.deepcopy(self.ini_map)

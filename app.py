@@ -16,8 +16,8 @@ class App:
         # マップ上のドットがすべて回収されたかどうか表す
         self.is_completed = False
         
-        # 描画を一時停止するか表す
-        self.is_stop = False
+        # 描画を開始するか判定
+        self.is_start = True
         
         # pyxelの設定
         pyxel.init(map_w*dot_size, map_h*dot_size, fps=fps)
@@ -28,11 +28,14 @@ class App:
     def _update(self):
         # エージェントの座標などを更新する関数
         
-        # エージェントの移動
-        for agent in self.agents:
-            self._agent_move(agent)
+        # [q]が押されたとき、描画開始
+        if pyxel.btnp(pyxel.KEY_Q):
+            self.is_start = False
         
-        self._stop()
+        if not self.is_start:
+            # エージェントの移動
+            for agent in self.agents:
+                self._agent_move(agent)
             
     def _draw(self):
         # マップやエージェントを毎フレーム描画する関数
@@ -124,16 +127,6 @@ class App:
         x = x // self.dot_size
         y = y // self.dot_size
         return x, y
-    
-    def _stop(self):
-        # pyxelを一時停止する関数
-        print(self.is_stop)
-        if pyxel.btnp(pyxel.KEY_Q):
-            self.is_stop = True
-        
-        while(self.is_stop):
-            if pyxel.btnp(pyxel.KEY_Q):
-                self.is_stop = False
             
     def loop(self):
         # pyxelを実行する関数
