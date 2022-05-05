@@ -1,8 +1,10 @@
+from moving_object import MovingObject
 import copy
 import numpy as np
 
-class Agent:
-    def __init__(self, alpha, gamma, k, actions, pos, dot_size, observation):
+class Agent(MovingObject):
+    def __init__(self, alpha, gamma, k, pos, dot_size, actions, observation):
+        super().__init__(pos, dot_size, actions, observation)
         
         # 学習系の変数
         self.alpha = alpha
@@ -10,19 +12,7 @@ class Agent:
         self.k = k
         self.compute_epsilon(0)
         
-        # 行動系の変数
-        self.actions = actions
-        self.vector = None
-        
-        # 座標系の変数
-        self.pos = pos
-        self.ini_pos = pos
-        self.dot_pos = (pos[0] * dot_size, pos[1] * dot_size)
-        self.ini_dot_pos = self.dot_pos
-        
         # 状態系の変数
-        self.state = observation
-        self.ini_state = observation
         self.previous_state = None
         self.previous_action = None
         
@@ -82,34 +72,11 @@ class Agent:
         # 探索率を計算する関数
         self.epsilon = 1 / (self.k * episode + 1)
     
-    def set_pos(self, pos):
-        # リスト上での座標を渡す関数
-        self.pos = pos
-            
-    def set_dot_pos(self, pos):
-        # ドット上での座標を渡す関数
-        self.dot_pos = pos
-    
-    def get_dot_pos(self):
-        # ドット上での座標を取得する関数
-        return self.dot_pos
-    
-    def set_vector(self, vector):
-        # 向いている方向を渡す関数
-        self.vector = vector
-    
-    def get_vector(self):
-        # 向いている方向を取得する関数
-        return self.vector
-    
     def get_state(self):
         # 状態を取得する関数
         return self.state
     
     def reset(self):
         # 座標と状態をリセットする関数
-        
-        self.pos = self.ini_pos
-        self.dot_pos = self.ini_dot_pos
+        super().reset()
         self.previous_state = copy.deepcopy(self.ini_state)
-        self.state = copy.deepcopy(self.ini_state)

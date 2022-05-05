@@ -1,5 +1,6 @@
 from world import World
 from agent import Agent
+from enemy import Enemy
 from app import App
 import numpy as np
 import csv
@@ -13,15 +14,21 @@ STEP = 150
 MAP_W = 10
 MAP_H = 10
 # オブジェクトの種類
-OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3}
+OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
 # 報酬
-REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'all': 50}
+REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 # エージェント数
 AGENT_N = 1
-# エージェントの初期位置(エージェント数に合わせる)
-AGENTS_POS = [(1,1), (8,8)]
+# エージェントの初期位置
+AGENTS_POS = [(1,1)]
 # エージェントの視界
+AGENT_SCOPE = 2
+# 敵の数
+ENEMY_N = 1
+# 敵の初期位置
+AGENTS_POS = [(8,8)]
+# 敵の視界
 AGENT_SCOPE = 2
 
 #-----------------------------エージェントの設定------------------------------#
@@ -49,7 +56,7 @@ def main():
     # エージェントの生成
     agents = []
     for n in range(AGENT_N):
-        agents.append(Agent(ALPHA, GAMMA, K, ACTIONS, AGENTS_POS[n], DOT_SIZE,
+        agents.append(Agent(ALPHA, GAMMA, K, AGENTS_POS[n], DOT_SIZE, ACTIONS,
                             world.get_state(AGENTS_POS[n][0], AGENTS_POS[n][1])))
     
     # 実験
