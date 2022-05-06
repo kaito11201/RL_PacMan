@@ -6,29 +6,54 @@ class Enemy(MovingObject):
         super().__init__(pos, dot_size, actions, observation)
         self.objects = objects
         self.scope = scope
+        self.view = self.state[0]
+        self.origin = self._compute_origin()
         
     def act(self):
         # 行動を選択する関数
-        view = self.state[0]
-        if self.objects['agent'] in view:
-            index = view.index(self.objects['agent'])
-            view_len = len(view)
-            
-            x = view_len % (self.scope * 2 + 1)
-            y = view_len // (self.scope * 2 + 1)
-            
-            vector = self._compute_vector(x, y)
-            
+        
+        if self.objects['agent'] in self.view:
+            vector = self._compute_vector(self._compute_agent_pos())
+            return self._decision_action(vector)
             
         else:
             key = [k for k, v in self.objects.items() if v == np.randint(len(self.actions))][0]
             return self.actions[key]
     
-    def _compute_vector(self, x, y):
+    def _decision_action(self, vector):
+        # 進む方向を決める関数
+        if vector[1] < 0:
+            return self.actions['up']
+        elif vector[1] > 0:
+            return self.actions['down']
+        elif vector[0] < 0:
+            return self.actions['left']
+        elif vector[0] > 0:
+            return self.actions['right']
+        else:
+            # 敵とエージェントの位置が重なっている場合
+            return self.actions['right']
+    
+    def _compute_vector(self, pos):
         # エージェントがいる方向を求める関数
-        return np.array([x - self.scope, y - self.scope])
+        return pos - self.origin
+    
+    def _compute_agent_pos(self):
+        # 視界の中でのエージェントの座標を求める関数
+        index = self.view.index(self.objects['agent'])
+        agent_x = index % (self.scope * 2 + 1)
+        agent_y = index // (self.scope * 2 + 1)
         
+        return np.array([agent_x, agent_y])
+    
+    def _compute_origin(self):
+        # 視界の中での敵の座標を求める関数
+        view_len = len(self.view)
+        origin_x = view_len % (self.scope * 2 + 1)
+        origin_y = view_len // (self.scope * 2 + 1)
         
+        return np.array([origin_x, origin_y])
+    
     # def _depth_search(self, x, y, route):
     #     # 深さ優先でルートを探索する関数
         
