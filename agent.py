@@ -3,8 +3,8 @@ import copy
 import numpy as np
 
 class Agent(MovingObject):
-    def __init__(self, alpha, gamma, k, pos, dot_size, actions, observation):
-        super().__init__(pos, dot_size, actions, observation)
+    def __init__(self, alpha, gamma, k, number, pos, dot_size, actions, observation, is_dead):
+        super().__init__(number, pos, dot_size, actions)
         
         # 学習系の変数
         self.alpha = alpha
@@ -13,8 +13,11 @@ class Agent(MovingObject):
         self.compute_epsilon(0)
         
         # 状態系の変数
+        self.state = observation
+        self.ini_state = observation
         self.previous_state = None
         self.previous_action = None
+        self.is_dead = is_dead
         
         # Q値を表すQテーブル
         self.q_table = self._create_q_table()
@@ -76,7 +79,15 @@ class Agent(MovingObject):
         # 状態を取得する関数
         return self.state
     
+    def get_is_dead(self):
+        return self.is_dead
+    
+    def set_is_dead(self, is_dead):
+        self.is_dead = is_dead
+    
     def reset(self):
         # 座標と状態をリセットする関数
         super().reset()
+        self.is_dead = False
+        self.state = copy.deepcopy(self.ini_state)
         self.previous_state = copy.deepcopy(self.ini_state)

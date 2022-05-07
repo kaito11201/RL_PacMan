@@ -3,13 +3,17 @@ import numpy as np
 import copy
 
 class World:
-    def __init__(self, width, height, objects, actions, rewards, scope):
+    def __init__(self, width, height, objects, actions, rewards, scope, agents_pos, enemies_pos):
         self.width = width
         self.height = height
         self.objects = objects
         self.actions = actions
         self.rewards = rewards
         self.scope = scope
+        self.agents_pos = agents_pos
+        self.ini_agents_pos = agents_pos
+        self.enemies_pos = enemies_pos
+        self.ini_enemies_pos = enemies_pos
         
         # 二次元リストのマップ
         self.ini_map = self._create_map(width, height)
@@ -18,7 +22,11 @@ class World:
         # マップ上にあるドットの数
         self.dot_n = self._count_dot()
         
-    def step(self, x, y, action, state):
+        # オブジェクトを一時的に保存するバッファ
+        self.ini_object_buffer = self._create_object_buffer(enemies_pos)
+        self.object_buffer = copy.deepcopy(self.ini_object_buffer)
+    
+    def step(self, x, y, action):
         # 行動を実行する関数
         
         to_x, to_y = x, y
@@ -35,18 +43,9 @@ class World:
         
         # 移動先が壁か判定
         if self._is_wall(to_x, to_y):
-            return (x, y), state, self.rewards['wall'], True, False
-        
-        # マップにあるドットをすべて回収したか判定
-        is_completed = self._is_completed()
-        
-        # 移動先の状態と報酬を取得
-        agent_state = self.get_state(to_x, to_y)
-        reward = self._get_reward(to_x, to_y, is_completed)
-    
-        
-        
-        return (to_x, to_y), agent_state, reward, False, is_completed
+            return x, y, True
+        else:
+            return to_x, to_y, False
     
     def _is_wall(self, x, y):
         # 受け取った座標に壁があるか判定する関数
@@ -57,7 +56,7 @@ class World:
             return False
     
     def get_state(self, x, y):
-        # agentの状態を渡す関数
+        # エージェントの状態を渡す関数
         
         state = []
         
@@ -71,8 +70,16 @@ class World:
         view = []
         for h in range(-self.scope, self.scope + 1):
             for w in range(-self.scope, self.scope + 1):
+                
                 if self._is_within_range(x+w, y+h):
-                    view.append(self.map[y+h, x+w])
+                    
+                    moving_object = self._exist_moving_object(x+w, y+h)
+                    
+                    if moving_object:
+                        view.append(moving_object)
+                    else:
+                        view.append(self.map[y+h, x+w])
+                        
                 else:
                     view.append(None)
                     
@@ -85,18 +92,24 @@ class World:
         
         return tuple(state)
     
-    def _get_reward(self, x, y, is_completed):
+    def get_reward(self, x, y):
         # 報酬を渡す関数
         
         reward = 0
         
         # ドットをすべて回収した場合追加
-        if is_completed:
+        if self.is_completed():
             reward += self.rewards['all']
-        reward += self.rewards[self.objects[self.map[y, x]]]
+            
+        moving_object = self._exist_moving_object(x, y)
+        
+        if moving_object:
+            reward += self.rewards[self.objects[moving_object]]
+        else:
+            reward += self.rewards[self.objects[self.map[y, x]]]
         return reward
     
-    def _is_completed(self):
+    def is_completed(self):
         # ドットを全て回収できたか確認する関数
         
         dot_n = self._count_dot()
@@ -121,19 +134,39 @@ class World:
         map[:, 0] = self.objects['wall']
         map[:, width-1] = self.objects['wall']
         
+        map = np.array([[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+                        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+                        [2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2],
+                        [2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2],
+                        [2, 1, 2, 2, 2, 1, 2, 2, 1, 2, 2, 2, 1, 2, 1, 2],
+                        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2],
+                        [2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2],
+                        [2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 2, 1, 2],
+                        [2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 1, 1, 1, 2],
+                        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 1, 2],
+                        [2, 1, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2, 1, 2, 1, 2],
+                        [2, 1, 2, 2, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 1, 2],
+                        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2],
+                        [2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2],
+                        [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+                        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],])
+        
+        # # エージェントの配置
+        # for pos in agents_pos:
+        #     map[pos[1], pos[0]] = self.objects['agent']
+            
+        # # 敵の配置
+        # for pos in enemy_pos:
+        #     map[pos[1], pos[0]] = self.objects['enemy']
         return map
     
     def get_map(self):
         # マップを渡す関数
         return self.map
     
-    def to_none(self, x, y):
-        # 受け取った座標上にあるオブジェクトを何もない状態にする関数
-        self.map[y, x] = self.objects['none']
-    
-    def to_agent(self, x, y):
-        # 受け取った座標上にあるオブジェクトをエージェントに更新する関数
-        self.map[y, x] = self.objects['agent']
+    def to_object(self, x, y, object):
+        # オブジェクトを置き換える関数
+        self.map[y, x] = object
     
     def _is_within_range(self, x, y):
         # 受け取った座標がマップの範囲内か返す関数
@@ -143,7 +176,45 @@ class World:
         elif y < 0 or y >= self.height:
             return False
         return True
+    
+    def add_object_buffer(self, object):
+        # 座標上のオブジェクトを一時的に保存する関数
+        self.object_buffer.append(object)
         
+    def pop_object_buffer(self):
+        # 一時的に保存していたオブジェクトを返す関数
+        return self.object_buffer.pop(0)
+    
+    def _create_object_buffer(self, enemy_pos):
+        # 一時的にオブジェクトを保存するバッファを作成する関数
+        buffer = []
+        for _ in range(len(enemy_pos)):
+            buffer.append(self.objects['dot'])
+        return buffer
+    
+    def set_agent_pos(self, x, y, number):
+        # エージェントの位置を受け取る関数
+        self.agents_pos[number] = (x, y)
+    
+    def set_enemy_pos(self, x, y, number):
+        # 敵の位置を受け取る関数
+        self.enemies_pos[number] = (x, y)
+    
+    def _exist_moving_object(self, x, y):
+        # 受け取った座標に動くオブジェクト（エージェント or 敵）がいた場合、そのオブジェクトを返す
+        
+        if (x, y) in self.agents_pos:
+            return self.objects['agent']
+        
+        elif (x, y) in self.enemies_pos:
+            return self.objects['enemy']
+        
+        else:
+            return False
+    
     def reset(self):
         # マップを初期状態にする関数
         self.map = copy.deepcopy(self.ini_map)
+        self.object_buffer = copy.deepcopy(self.ini_object_buffer)
+        self.agents_pos = copy.deepcopy(self.ini_agents_pos)
+        self.enemies_pos = copy.deepcopy(self.ini_enemies_pos)

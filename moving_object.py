@@ -1,7 +1,10 @@
 import copy
 
 class MovingObject:
-    def __init__(self, pos, dot_size, actions, observation):
+    def __init__(self, number, pos, dot_size, actions):
+        
+        # 番号
+        self.number = number
         
         # 座標系の変数
         self.pos = pos
@@ -13,13 +16,9 @@ class MovingObject:
         self.actions = actions
         self.vector = None
         
-        # 状態系の変数
-        self.state = observation
-        self.ini_state = observation
-        
-    def set_pos(self, pos):
+    def set_pos(self, x, y):
         # リスト上での座標を渡す関数
-        self.pos = pos
+        self.pos = (x, y)
             
     def set_dot_pos(self, pos):
         # ドット上での座標を渡す関数
@@ -38,7 +37,6 @@ class MovingObject:
         return self.vector
     
     def reset(self):
-        # 座標と状態をリセットする関数
+        # 座標をリセットする関数
         self.pos = self.ini_pos
         self.dot_pos = self.ini_dot_pos
-        self.state = copy.deepcopy(self.ini_state)
