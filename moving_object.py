@@ -19,7 +19,7 @@ class MovingObject:
     def set_pos(self, x, y):
         # リスト上での座標を渡す関数
         self.pos = (x, y)
-            
+    
     def set_dot_pos(self, pos):
         # ドット上での座標を渡す関数
         self.dot_pos = pos

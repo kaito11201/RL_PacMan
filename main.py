@@ -10,11 +10,11 @@ import csv
 # エピソード数
 EPISODE = 10000
 # ステップ数
-STEP = 100
+STEP = 500
 
 # マップサイズ
-MAP_W = 16
-MAP_H = 16
+MAP_W = 12
+MAP_H = 12
 # オブジェクトの種類
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
@@ -36,13 +36,13 @@ ACTIONS = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
 
 #-----------------------------Q学習の設定------------------------------#
 # 探索率の係数(1に近い方が良い)
-K = .99999999
+K = .99
 # 学習率
 ALPHA = .1
 # 割引率
 GAMMA = .90
 # 報酬
-REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -100, 'all': 50}
+REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 
 #--------------------------------pyxelの設定---------------------------------#
 # ドットのサイズ
@@ -70,10 +70,15 @@ def main():
                              OBJECTS, SCOPE))
     
     # 実験
+    
+    # ドットを全て回収したときの行動を保存するリスト
     success_action_list = []
     
     for episode in range(EPISODE):
         action_list = []
+        
+        if episode % (EPISODE // 10) == 0:
+            print(f"{episode}episode経過しました。")
         
         # 探索率の算出
         for agent in agents:
@@ -91,12 +96,14 @@ def main():
             if step % 2 == 1:
                 for enemy in enemies:
                     action_list.append(enemy_move(enemy, agents, world))
-                
-            # ドットを全て回収、またはエージェントが死滅した場合終了
+            
+            # ドットを全て回収した場合終了
             if world.is_completed():
+                print(f"episode:{episode} step:{step}でドットを全て回収しました。")
                 success_action_list = copy.deepcopy(action_list)
                 break
             
+            # エージェントが全て死んだ場合終了
             if is_all_dead(agents):
                 break
         
@@ -107,13 +114,16 @@ def main():
             enemy.reset()
         world.reset()
     
-    result(agents)
+    # pyxelで最後にドットを全回収した様子を描画する
+    if success_action_list:
+        app = App(world, agents, enemies, MAP_W, MAP_H, DOT_SIZE,
+                FPS, OBJECTS, OBJ_POS, ACTIONS, success_action_list)
+        app.loop()
+    else:
+        print("ドットを全て回収できたepisodeはありませんでした。")
     
-    print(success_action_list)
-    # pyxelで最後のエピソードを描画
-    app = App(world, agents, enemies, MAP_W, MAP_H, DOT_SIZE,
-              FPS, OBJECTS, OBJ_POS, ACTIONS, success_action_list)
-    app.loop()
+    # 学習結果を表示
+    result(agents)
     
     return 0
 
