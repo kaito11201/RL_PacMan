@@ -5,16 +5,17 @@ from app import App
 import numpy as np
 import copy
 import csv
+import datetime
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 10000
+EPISODE = 1000
 # ステップ数
 STEP = 500
 
 # マップサイズ
-MAP_W = 12
-MAP_H = 12
+MAP_W = 5
+MAP_H = 5
 # オブジェクトの種類
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
@@ -29,8 +30,6 @@ ENEMY_N = 1
 # 敵の初期位置
 ENEMIES_POS = [(MAP_W - 2,MAP_H - 2)]
 
-# 視界の範囲
-SCOPE = 2
 # 行動の種類
 ACTIONS = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
 
@@ -41,6 +40,8 @@ K = .99
 ALPHA = .1
 # 割引率
 GAMMA = .90
+# 視界の範囲
+SCOPE = 2
 # 報酬
 REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 
@@ -52,7 +53,7 @@ FPS = 100
 # 描画するオブジェクトのドット絵がある場所
 OBJ_POS = {'none': (8,8), 'dot': (8,16), 'wall': (0,16), 'agent': (0,0), 'enemy': (0, 8)}
 
-def main():
+def main(now):
     # 環境の生成
     world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS, SCOPE, AGENTS_POS, ENEMIES_POS)
     
@@ -69,15 +70,22 @@ def main():
                              world.get_state(ENEMIES_POS[n][0],ENEMIES_POS[n][1]),
                              OBJECTS, SCOPE))
     
-    # 実験
+    # 設定の出力
+    output_option(now, world.get_ini_map())
     
+    # ドットを全て回収した回数を保存する変数
+    completed_count = 0
+    # ドットを全て回収した時のstep数を保存するリスト
+    completed_step_list = []
     # ドットを全て回収したときの行動を保存するリスト
-    success_action_list = []
+    completed_action_list = []
     
+    # 実験
     for episode in range(EPISODE):
         action_list = []
         
         if episode % (EPISODE // 10) == 0:
+            print(AGENTS_POS, ENEMIES_POS)
             print(f"{episode}episode経過しました。")
         
         # 探索率の算出
@@ -99,8 +107,9 @@ def main():
             
             # ドットを全て回収した場合終了
             if world.is_completed():
-                print(f"episode:{episode} step:{step}でドットを全て回収しました。")
-                success_action_list = copy.deepcopy(action_list)
+                completed_action_list = copy.deepcopy(action_list)
+                completed_count += 1
+                completed_step_list.append(step)
                 break
             
             # エージェントが全て死んだ場合終了
@@ -114,16 +123,18 @@ def main():
             enemy.reset()
         world.reset()
     
+    # 学習結果を表示
+    output_result(dt_now, completed_count, completed_step_list, agents, world.get_ini_map())
+    
     # pyxelで最後にドットを全回収した様子を描画する
-    if success_action_list:
+    if completed_action_list:
         app = App(world, agents, enemies, MAP_W, MAP_H, DOT_SIZE,
-                FPS, OBJECTS, OBJ_POS, ACTIONS, success_action_list)
+                FPS, OBJECTS, OBJ_POS, ACTIONS, completed_action_list)
         app.loop()
     else:
         print("ドットを全て回収できたepisodeはありませんでした。")
     
-    # 学習結果を表示
-    result(agents)
+    
     
     return 0
 
@@ -200,16 +211,62 @@ def is_all_dead(agents):
     else:
         return False
 
-def result(agents):
-    # 学習結果の出力をする関数
+def compute_mean(list_):
+    # 与えられたリストの平均値を求める関数
+    return np.mean(list_)
+
+def output_option(now, map):
+    # 実験の設定を出力する関数
     
+    f = open(f'result/learn_results/learn_result_{now}.txt', 'w')
+    
+    # 設定の記述
+    f.write("[option(experiment)]\n")
+    f.write(f"EPISODE:{EPISODE} STEP:{STEP}\n")
+    f.write(f"MAP_WIDTH:{MAP_W} MAP_HEIGHT:{MAP_H}\n")
+    f.write(f"AGENTS_POSITION:{AGENTS_POS} ENEMIES_POSITION:{ENEMIES_POS}\n")
+    f.write(f"SCOPE:{SCOPE}\n")
+    write_map(f, map)
+    
+    f.write("\n[option(learning)]\n")
+    f.write(f"K:{K} ALPHA:{ALPHA} GAMMA:{GAMMA}\n")
+    f.write(f"REWARDS:{REWARDS}\n")
+    
+    f.close()
+    
+def output_result(now, completed_count, completed_step_list, agents, map):
+    # 学習結果を出力する関数
+    
+    mean = None
+    median = None
+    
+    if completed_step_list:
+        mean = np.mean(completed_step_list)
+        median = np.median(completed_step_list)
+    
+    f = open(f'result/learn_results/learn_result_{now}.txt', 'a')
+    
+    f.write(f"\n[result]\n")
+    f.write(f"completed:{completed_count}/{EPISODE} completed_ratio:{completed_count/ EPISODE * 100}%\n")
+    f.write(f"completed_step_mean:{mean}\n")
+    f.write(f"completed_step_median:{median}\n")
+    
+    f.close()
     
     # 各エージェントのQテーブルを出力
     for i, agent in enumerate(agents):
-        with open(f'result/q_tables/q_table({i}).csv', 'w') as f:
+        with open(f'result/q_tables/q_table({i})_{dt_now}.csv', 'w') as f:
             writer = csv.writer(f)
             for k, v in agent.q_table.items():
                 writer.writerow([k, v])
 
+def write_map(f, map):
+    for y in map:
+        f.write(f"{y}\n")
+
 if __name__ == "__main__":
-    main()
+    
+    # 現在の日付と時刻を取得
+    dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    
+    main(dt_now)

@@ -194,6 +194,9 @@ class World:
         else:
             return False
     
+    def get_ini_map(self):
+        return self.ini_map
+    
     def reset(self):
         # マップを初期状態にする関数
         self.map = copy.deepcopy(self.ini_map)

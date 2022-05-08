@@ -1,0 +1,19 @@
+[option(experiment)]
+EPISODE:1000 STEP:500
+MAP_WIDTH:5 MAP_HEIGHT:5
+AGENTS_POSITION:[(1, 1)] ENEMIES_POSITION:[(3, 3)]
+SCOPE:2
+[2. 2. 2. 2. 2.]
+[2. 1. 1. 1. 2.]
+[2. 1. 1. 1. 2.]
+[2. 1. 1. 1. 2.]
+[2. 2. 2. 2. 2.]
+
+[option(learning)]
+K:0.99 ALPHA:0.1 GAMMA:0.9
+REWARDS:{'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
+
+[result]
+completed:181/1000 completed_ratio:18.099999999999998%
+completed_step_mean:9.6353591160221
+completed_step_median:9.0
