@@ -21,10 +21,6 @@ class World:
         
         # マップ上にあるドットの数
         self.dot_n = self._count_dot()
-        
-        # オブジェクトを一時的に保存するバッファ
-        self.ini_object_buffer = self._create_object_buffer(enemies_pos)
-        self.object_buffer = copy.deepcopy(self.ini_object_buffer)
     
     def step(self, x, y, action):
         # 行動を実行する関数
@@ -86,9 +82,10 @@ class World:
         view = tuple(view)
         
         # 各情報を追加
+        state.append(view)
         # state.append(dot_n)
         # state.append(pos)
-        state.append(view)
+        
         
         return tuple(state)
     
@@ -177,21 +174,6 @@ class World:
             return False
         return True
     
-    def add_object_buffer(self, object):
-        # 座標上のオブジェクトを一時的に保存する関数
-        self.object_buffer.append(object)
-        
-    def pop_object_buffer(self):
-        # 一時的に保存していたオブジェクトを返す関数
-        return self.object_buffer.pop(0)
-    
-    def _create_object_buffer(self, enemy_pos):
-        # 一時的にオブジェクトを保存するバッファを作成する関数
-        buffer = []
-        for _ in range(len(enemy_pos)):
-            buffer.append(self.objects['dot'])
-        return buffer
-    
     def set_agent_pos(self, x, y, number):
         # エージェントの位置を受け取る関数
         self.agents_pos[number] = (x, y)
@@ -203,10 +185,10 @@ class World:
     def _exist_moving_object(self, x, y):
         # 受け取った座標に動くオブジェクト（エージェント or 敵）がいた場合、そのオブジェクトを返す
         
-        if (x, y) in self.agents_pos:
-            return self.objects['agent']
+        # if (x, y) in self.agents_pos:
+        #     return self.objects['agent']
         
-        elif (x, y) in self.enemies_pos:
+        if (x, y) in self.enemies_pos:
             return self.objects['enemy']
         
         else:
@@ -215,6 +197,5 @@ class World:
     def reset(self):
         # マップを初期状態にする関数
         self.map = copy.deepcopy(self.ini_map)
-        self.object_buffer = copy.deepcopy(self.ini_object_buffer)
         self.agents_pos = copy.deepcopy(self.ini_agents_pos)
         self.enemies_pos = copy.deepcopy(self.ini_enemies_pos)

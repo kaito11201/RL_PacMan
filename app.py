@@ -1,9 +1,8 @@
-from threading import setprofile
 import pyxel
 import numpy as np
 
 class App:
-    def __init__(self, world, agents, enemies, map_w, map_h, dot_size, fps, objects, obj_pos, actions):
+    def __init__(self, world, agents, enemies, map_w, map_h, dot_size, fps, objects, obj_pos, actions, vector_list):
         self.world = world
         self.agents = agents
         self.enemies = enemies
@@ -13,6 +12,8 @@ class App:
         self.objects = objects
         self.obj_pos = obj_pos
         self.actions = actions
+        
+        self.vector_list = vector_list
         
         self.frame = 0
         
@@ -36,17 +37,37 @@ class App:
             self.is_start = False
         
         if not self.is_start:
-            # エージェントの移動
-            for agent in self.agents:
-                if not agent.get_is_dead():
-                    self._agent_move(agent)
+            
+            turn = self._compute_turn()
+            
+            action_index = self._compute_action()
+            
+            if action_index < len(self.vector_list):
+            
+                # エージェントの移動
+                for agent in self.agents:
+                    if not agent.get_is_dead():
+                        if turn == agent.number or turn - 1 == agent.number:
+                            self._move(agent, self.vector_list[action_index])
                 
-            # 敵の移動
-            if self.frame % 2 == 0:
+                # 敵の移動
                 if not self._is_all_dead():
                     for enemy in self.enemies:
-                        self._enemy_move(enemy)
-        self.frame += 1
+                        if turn == len(self.agents) * 2 + enemy.number:
+                            self._move(enemy, self.vector_list[action_index])
+            
+            # # エージェントの移動
+            # for agent in self.agents:
+            #     if not agent.get_is_dead():
+            #         if turn == agent.number or turn - 1 == agent.number:
+            #             self._agent_move(agent)
+            # # 敵の移動
+            # if not self._is_all_dead():
+            #     for enemy in self.enemies:
+            #         if turn == len(self.agents) * 2 + enemy.number:
+            #             self._enemy_move(enemy)
+            
+            self.frame += 1
 
     def _draw(self):
         # マップやエージェントを毎フレーム描画する関数
@@ -94,6 +115,38 @@ class App:
                   self.obj_pos['enemy'][1],
                   self.dot_size, self.dot_size)
     
+    def _move(self, moving, vector):
+        
+        dot_x, dot_y = moving.get_dot_pos()
+        
+        if self._is_match_dot(dot_x, dot_y):
+            
+            # リスト上での座標を取得
+            x, y = self._to_world_pos(dot_x, dot_y)
+            
+            if moving in self.agents:
+                # エージェントの足元を何も無い状態にする
+                self.world.to_object(x, y, self.objects['none'])
+            # エージェントの移動
+            _, _,  is_wall = self.world.step(x, y, vector)
+            
+            if is_wall:
+                return 0
+            
+        # 方向に従って移動
+        if vector == self.actions['up']:
+            dot_y -= 1
+        elif vector == self.actions['down']:
+            dot_y += 1
+        elif vector == self.actions['left']:
+            dot_x -= 1
+        elif vector == self.actions['right']:
+            dot_x += 1
+        
+        # 移動先をエージェントに渡す
+        moving.set_dot_pos((dot_x, dot_y))
+        
+    
     def _agent_move(self, agent):
         # エージェントが移動する関数
         
@@ -122,10 +175,6 @@ class App:
             else:
                 agent.observe(self.world.get_state(to_x, to_y), self.world.get_reward(to_x, to_y))
             
-            # 移動先にあるオブジェクトが敵
-            if (to_x, to_y) in self.world.enemies_pos:
-                agent.set_is_dead(True)
-            
             agent.set_pos(to_x, to_y)
             self.world.set_agent_pos(to_x, to_y, agent.number)
             
@@ -146,6 +195,11 @@ class App:
         elif vector == self.actions['right']:
             dot_x += 1
         
+        # 移動先にあるオブジェクトが敵
+        for enemy in self.enemies:
+            if enemy.dot_pos == (dot_x, dot_y):
+                agent.set_is_dead(True)
+        
         # 移動先をエージェントに渡す
         agent.set_dot_pos((dot_x, dot_y))
         
@@ -161,10 +215,6 @@ class App:
             # リスト上での座標を取得
             x, y = self._to_world_pos(dot_x, dot_y)
             
-            # # 敵の足元を前の状態に戻す
-            # pre_object = self.world.pop_object_buffer()
-            # self.world.to_object(x, y, pre_object)
-            
             # 行動を決定
             vector = enemy.act(self.world.agents_pos)
             enemy.set_vector(vector)
@@ -172,12 +222,7 @@ class App:
             # 移動
             to_x, to_y, is_wall = self.world.step(x, y, vector)
             
-            # # 観測
-            # enemy.set_view(self.world.get_state(to_x, to_y)[0])
-            
             if is_wall:
-                # self.world.add_object_buffer(pre_object)
-                # self.world.to_object(to_x, to_y, self.objects['enemy'])
                 return 0
             
             #「マップ上のドットを全て回収した」場合移動しない
@@ -186,10 +231,6 @@ class App:
             
             enemy.set_pos(to_x, to_y)
             self.world.set_enemy_pos(to_x, to_y, enemy.number)
-            
-            # # 移動先にあるオブジェクトを保存
-            # object = self.world.get_map()[to_y, to_x]
-            # self.world.add_object_buffer(object)
         
         # エージェントが向いている方向を取得
         vector = enemy.get_vector()
@@ -208,6 +249,7 @@ class App:
         for agent in self.agents:
             if agent.dot_pos == (dot_x, dot_y):
                 agent.set_is_dead(True)
+                agent.observe(agent.get_previous_state(), self.world.rewards['enemy'])
         
         # 移動先を敵に渡す
         enemy.set_dot_pos((dot_x, dot_y))
@@ -232,6 +274,14 @@ class App:
                 count += 1
         
         return count == len(self.agents)
+    
+    def _compute_turn(self):
+        # ターンを計算する関数
+        return (self.frame // self.dot_size) % (len(self.agents) * 2 + len(self.enemies))
+    
+    def _compute_action(self):
+        # ベクトルリストの添え字を求める関数
+        return self.frame // self.dot_size
     
     def loop(self):
         # pyxelを実行する関数

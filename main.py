@@ -3,13 +3,14 @@ from agent import Agent
 from enemy import Enemy
 from app import App
 import numpy as np
+import copy
 import csv
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 300
+EPISODE = 10000
 # ステップ数
-STEP = 300
+STEP = 100
 
 # マップサイズ
 MAP_W = 16
@@ -26,7 +27,7 @@ AGENTS_POS = [(1,1)]
 # 敵の数
 ENEMY_N = 1
 # 敵の初期位置
-ENEMIES_POS = [(14,14)]
+ENEMIES_POS = [(MAP_W - 2,MAP_H - 2)]
 
 # 視界の範囲
 SCOPE = 2
@@ -69,29 +70,34 @@ def main():
                              OBJECTS, SCOPE))
     
     # 実験
-    for episode in range(EPISODE - 1):
+    success_action_list = []
+    
+    for episode in range(EPISODE):
+        action_list = []
         
         # 探索率の算出
         for agent in agents:
             agent.compute_epsilon(episode)
         
         for step in range(STEP):
-            if episode == 200:
-                print(agents[0].pos, enemies[0].pos)
-                
+            
             # エージェントの行動
             for agent in agents:
                 # エージェントが生存している場合、行動
                 if not agent.get_is_dead():
-                    agent_move(agent, world)
+                    action_list.append(agent_move(agent, world))
             
             # 敵の行動
-            if step % 2 == 0:
+            if step % 2 == 1:
                 for enemy in enemies:
-                    enemy_move(enemy, agents, world)
+                    action_list.append(enemy_move(enemy, agents, world))
                 
             # ドットを全て回収、またはエージェントが死滅した場合終了
-            if world.is_completed() or is_all_dead(agents):
+            if world.is_completed():
+                success_action_list = copy.deepcopy(action_list)
+                break
+            
+            if is_all_dead(agents):
                 break
         
         # 初期化
@@ -103,9 +109,10 @@ def main():
     
     result(agents)
     
+    print(success_action_list)
     # pyxelで最後のエピソードを描画
     app = App(world, agents, enemies, MAP_W, MAP_H, DOT_SIZE,
-              FPS, OBJECTS, OBJ_POS, ACTIONS)
+              FPS, OBJECTS, OBJ_POS, ACTIONS, success_action_list)
     app.loop()
     
     return 0
@@ -133,10 +140,12 @@ def agent_move(agent, world):
     # 移動先にあるオブジェクトが敵
     if (to_x, to_y) in world.enemies_pos:
         agent.set_is_dead(True)
-    
+        
     # 位置を渡す
     agent.set_pos(to_x, to_y)
     world.set_agent_pos(to_x, to_y, agent.number)
+    
+    return action
 
 def enemy_move(enemy, agents, world):
     # 敵の行動を行う関数
@@ -161,12 +170,13 @@ def enemy_move(enemy, agents, world):
     for agent in agents:
         if agent.pos == (to_x, to_y):
             agent.set_is_dead(True)
-            agent.observe(agent.get_state(), REWARDS['enemy'])
-            # print(agent.get_state(), agent.q_table[agent.get_state()])
+            agent.observe(agent.get_previous_state(), REWARDS['enemy'])
     
     # 位置を渡す
     enemy.set_pos(to_x, to_y)
     world.set_enemy_pos(to_x, to_y, enemy.number)
+    
+    return action
 
 def is_all_dead(agents):
     count = 0

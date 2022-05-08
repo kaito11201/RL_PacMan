@@ -58,7 +58,7 @@ class Agent(MovingObject):
         
         # 状態と報酬から学習
         self._learn(reward)
-
+        
     def _learn(self, reward):
         # Q値の更新を行う関数(学習する関数)
         
@@ -84,6 +84,9 @@ class Agent(MovingObject):
     
     def set_is_dead(self, is_dead):
         self.is_dead = is_dead
+    
+    def get_previous_state(self):
+        return self.previous_state
     
     def reset(self):
         # 座標と状態をリセットする関数
