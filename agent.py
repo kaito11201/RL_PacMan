@@ -3,6 +3,8 @@ import copy
 import numpy as np
 
 class Agent(MovingObject):
+    # エージェントの管理と、強化学習(Q学習)を行うクラス
+    
     def __init__(self, alpha, gamma, k, number, pos, dot_size, actions, observation, is_dead):
         super().__init__(number, pos, dot_size, actions)
         
@@ -80,12 +82,15 @@ class Agent(MovingObject):
         return self.state
     
     def get_is_dead(self):
+        # 生死状態を取得する関数
         return self.is_dead
     
     def set_is_dead(self, is_dead):
+        # 生死状態を渡す関数
         self.is_dead = is_dead
     
     def get_previous_state(self):
+        # 1つ前の状態を渡す関数
         return self.previous_state
     
     def reset(self):

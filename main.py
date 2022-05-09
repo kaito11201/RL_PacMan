@@ -9,26 +9,26 @@ import datetime
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 1000
+EPISODE = 10
 # ステップ数
 STEP = 500
 
 # マップサイズ
-MAP_W = 5
-MAP_H = 5
+MAP_W = 10
+MAP_H = 10
 # オブジェクトの種類
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
 
 # エージェント数
-AGENT_N = 1
+AGENT_N = 2
 # エージェントの初期位置
-AGENTS_POS = [(1,1)]
+AGENTS_POS = [(1,1), (MAP_W - 2, 1)]
 
 # 敵の数
-ENEMY_N = 1
+ENEMY_N = 2
 # 敵の初期位置
-ENEMIES_POS = [(MAP_W - 2,MAP_H - 2)]
+ENEMIES_POS = [(MAP_W - 2,MAP_H - 2), (1, MAP_H - 2)]
 
 # 行動の種類
 ACTIONS = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
@@ -41,7 +41,7 @@ ALPHA = .1
 # 割引率
 GAMMA = .90
 # 視界の範囲
-SCOPE = 2
+SCOPE = 1
 # 報酬
 REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 
@@ -66,9 +66,7 @@ def main(now):
     # 敵の生成
     enemies = []
     for n in range(ENEMY_N):
-        enemies.append(Enemy(n, ENEMIES_POS[n], DOT_SIZE, ACTIONS,
-                             world.get_state(ENEMIES_POS[n][0],ENEMIES_POS[n][1]),
-                             OBJECTS, SCOPE))
+        enemies.append(Enemy(n, ENEMIES_POS[n], DOT_SIZE, ACTIONS))
     
     # 設定の出力
     output_option(now, world.get_ini_map())
@@ -84,8 +82,8 @@ def main(now):
     for episode in range(EPISODE):
         action_list = []
         
+        # 実験の経過を出力
         if episode % (EPISODE // 10) == 0:
-            print(AGENTS_POS, ENEMIES_POS)
             print(f"{episode}episode経過しました。")
         
         # 探索率の算出
@@ -98,12 +96,15 @@ def main(now):
             for agent in agents:
                 # エージェントが生存している場合、行動
                 if not agent.get_is_dead():
-                    action_list.append(agent_move(agent, world))
+                    action_list.append((agent.number, agent_move(agent, world)))
             
             # 敵の行動
+            # 2ターンに1回行動
             if step % 2 == 1:
                 for enemy in enemies:
-                    action_list.append(enemy_move(enemy, agents, world))
+                    # エージェントが死滅していない場合、行動
+                    if not is_all_dead(agents):
+                        action_list.append((AGENT_N + enemy.number, enemy_move(enemy, agents, world)))
             
             # ドットを全て回収した場合終了
             if world.is_completed():
@@ -115,7 +116,12 @@ def main(now):
             # エージェントが全て死んだ場合終了
             if is_all_dead(agents):
                 break
-        
+            
+        # ドットを全て回収できなかったとき、最後の行動を保存
+        if not completed_action_list:
+            if episode == EPISODE - 1:
+                last_action_list = copy.deepcopy(action_list)
+            
         # 初期化
         for agent in agents:
             agent.reset()
@@ -124,17 +130,20 @@ def main(now):
         world.reset()
     
     # 学習結果を表示
-    output_result(dt_now, completed_count, completed_step_list, agents, world.get_ini_map())
+    output_result(dt_now, completed_action_list,
+                  completed_count, completed_step_list,
+                  agents, world.get_ini_map())
     
-    # pyxelで最後にドットを全回収した様子を描画する
+    # pyxelで実験の様子を描画
     if completed_action_list:
         app = App(world, agents, enemies, MAP_W, MAP_H, DOT_SIZE,
                 FPS, OBJECTS, OBJ_POS, ACTIONS, completed_action_list)
-        app.loop()
+        
     else:
         print("ドットを全て回収できたepisodeはありませんでした。")
-    
-    
+        app = App(world, agents, enemies, MAP_W, MAP_H, DOT_SIZE,
+                FPS, OBJECTS, OBJ_POS, ACTIONS, last_action_list)
+    app.loop()
     
     return 0
 
@@ -161,6 +170,7 @@ def agent_move(agent, world):
     # 移動先にあるオブジェクトが敵
     if (to_x, to_y) in world.enemies_pos:
         agent.set_is_dead(True)
+        world.set_agent_pos(None, None, agent.number)
         
     # 位置を渡す
     agent.set_pos(to_x, to_y)
@@ -171,15 +181,10 @@ def agent_move(agent, world):
 def enemy_move(enemy, agents, world):
     # 敵の行動を行う関数
     
-    # エージェントの座標を求める
-    agents_pos = []
-    for agent in agents:
-        agents_pos.append(agent.pos)
-    
     x, y = enemy.pos[0], enemy.pos[1]
     
     # 行動を選択
-    action = enemy.act(agents_pos)
+    action = enemy.act(world.get_agents_pos())
     
     # 移動
     to_x, to_y, is_wall = world.step(x, y, action)
@@ -192,6 +197,7 @@ def enemy_move(enemy, agents, world):
         if agent.pos == (to_x, to_y):
             agent.set_is_dead(True)
             agent.observe(agent.get_previous_state(), REWARDS['enemy'])
+            world.set_agent_pos(None, None, agent.number)
     
     # 位置を渡す
     enemy.set_pos(to_x, to_y)
@@ -200,6 +206,8 @@ def enemy_move(enemy, agents, world):
     return action
 
 def is_all_dead(agents):
+    # エージェントが死滅したか判定する関数
+    
     count = 0
     
     for agent in agents:
@@ -211,10 +219,6 @@ def is_all_dead(agents):
     else:
         return False
 
-def compute_mean(list_):
-    # 与えられたリストの平均値を求める関数
-    return np.mean(list_)
-
 def output_option(now, map):
     # 実験の設定を出力する関数
     
@@ -224,7 +228,7 @@ def output_option(now, map):
     f.write("[option(experiment)]\n")
     f.write(f"EPISODE:{EPISODE} STEP:{STEP}\n")
     f.write(f"MAP_WIDTH:{MAP_W} MAP_HEIGHT:{MAP_H}\n")
-    f.write(f"AGENTS_POSITION:{AGENTS_POS} ENEMIES_POSITION:{ENEMIES_POS}\n")
+    f.write(f"AGENTS_POSITION:{AGENTS_POS[:AGENT_N]} ENEMIES_POSITION:{ENEMIES_POS[:ENEMY_N]}\n")
     f.write(f"SCOPE:{SCOPE}\n")
     write_map(f, map)
     
@@ -234,7 +238,7 @@ def output_option(now, map):
     
     f.close()
     
-def output_result(now, completed_count, completed_step_list, agents, map):
+def output_result(now, completed_action_list, completed_count, completed_step_list, agents, map):
     # 学習結果を出力する関数
     
     mean = None
@@ -250,7 +254,7 @@ def output_result(now, completed_count, completed_step_list, agents, map):
     f.write(f"completed:{completed_count}/{EPISODE} completed_ratio:{completed_count/ EPISODE * 100}%\n")
     f.write(f"completed_step_mean:{mean}\n")
     f.write(f"completed_step_median:{median}\n")
-    
+    f.write(f"action_list:{completed_action_list}")
     f.close()
     
     # 各エージェントのQテーブルを出力
@@ -260,7 +264,12 @@ def output_result(now, completed_count, completed_step_list, agents, map):
             for k, v in agent.q_table.items():
                 writer.writerow([k, v])
 
+def compute_mean(list_):
+    # 与えられたリストの平均値を求める関数
+    return np.mean(list_)
+
 def write_map(f, map):
+    # マップをテキストで出力する関数
     for y in map:
         f.write(f"{y}\n")
 
