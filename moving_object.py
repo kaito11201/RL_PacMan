@@ -1,6 +1,8 @@
 import copy
 
 class MovingObject:
+    # 動くオブジェクトの親クラス
+    
     def __init__(self, number, pos, dot_size, actions):
         
         # 番号
@@ -19,6 +21,10 @@ class MovingObject:
     def set_pos(self, x, y):
         # リスト上での座標を渡す関数
         self.pos = (x, y)
+    
+    def get_pos(self):
+        # リスト上での座標を取得する関数
+        return self.pos
     
     def set_dot_pos(self, pos):
         # ドット上での座標を渡す関数

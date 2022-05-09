@@ -3,6 +3,8 @@ import numpy as np
 import copy
 
 class World:
+    # マップ（二次元リスト）を管理するクラス
+    
     def __init__(self, width, height, objects, actions, rewards, scope, agents_pos, enemies_pos):
         self.width = width
         self.height = height
@@ -21,6 +23,18 @@ class World:
         
         # マップ上にあるドットの数
         self.dot_n = self._count_dot()
+    
+    def _create_map(self, width, height):
+        # 初期状態のマップを作成する関数
+        
+        map = np.ones(width * height).reshape((height, width))
+        
+        # 周囲に壁を配置
+        map[0, :] = self.objects['wall']
+        map[height-1, :] = self.objects['wall']
+        map[:, 0] = self.objects['wall']
+        map[:, width-1] = self.objects['wall']
+        return map
     
     def step(self, x, y, action):
         # 行動を実行する関数
@@ -59,9 +73,6 @@ class World:
         # マップに残っているドットの数
         dot_n = self._count_dot()
         
-        # エージェントの座標
-        pos = (x, y)
-        
         # エージェントの視界
         view = []
         for h in range(-self.scope, self.scope + 1):
@@ -84,8 +95,8 @@ class World:
         # 各情報を追加
         state.append(view)
         # state.append(dot_n)
-        # state.append(pos)
-        
+        # state.append(tuple(self.agents_pos))
+        # state.append(tuple(self.enemies_pos))
         
         return tuple(state)
     
@@ -115,55 +126,19 @@ class World:
             return True
         else:
             return False
-    
+        
     def _count_dot(self):
         # マップにあるドットの数を数える関数
         return np.count_nonzero(self.map == self.objects['dot'])
     
-    def _create_map(self, width, height):
-        # 初期状態のマップを作成する関数
+    def _exist_moving_object(self, x, y):
+        # 受け取った座標に動くオブジェクト（敵）がいた場合、そのオブジェクトを返す
         
-        map = np.ones(width * height).reshape((height, width))
+        if (x, y) in self.enemies_pos:
+            return self.objects['enemy']
         
-        # 周囲に壁を配置
-        map[0, :] = self.objects['wall']
-        map[height-1, :] = self.objects['wall']
-        map[:, 0] = self.objects['wall']
-        map[:, width-1] = self.objects['wall']
-        
-        # map = np.array([[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-        #                 [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
-        #                 [2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2],
-        #                 [2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2],
-        #                 [2, 1, 2, 2, 2, 1, 2, 2, 1, 2, 2, 2, 1, 2, 1, 2],
-        #                 [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2],
-        #                 [2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2],
-        #                 [2, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 2, 1, 2],
-        #                 [2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 1, 1, 1, 2],
-        #                 [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 1, 2],
-        #                 [2, 1, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2, 1, 2, 1, 2],
-        #                 [2, 1, 2, 2, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 1, 2],
-        #                 [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 2],
-        #                 [2, 1, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2],
-        #                 [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
-        #                 [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],])
-        
-        # # エージェントの配置
-        # for pos in agents_pos:
-        #     map[pos[1], pos[0]] = self.objects['agent']
-            
-        # # 敵の配置
-        # for pos in enemy_pos:
-        #     map[pos[1], pos[0]] = self.objects['enemy']
-        return map
-    
-    def get_map(self):
-        # マップを渡す関数
-        return self.map
-    
-    def to_object(self, x, y, object):
-        # オブジェクトを置き換える関数
-        self.map[y, x] = object
+        else:
+            return False
     
     def _is_within_range(self, x, y):
         # 受け取った座標がマップの範囲内か返す関数
@@ -174,6 +149,10 @@ class World:
             return False
         return True
     
+    def to_object(self, x, y, object):
+        # オブジェクトを置き換える関数
+        self.map[y, x] = object
+    
     def set_agent_pos(self, x, y, number):
         # エージェントの位置を受け取る関数
         self.agents_pos[number] = (x, y)
@@ -182,17 +161,9 @@ class World:
         # 敵の位置を受け取る関数
         self.enemies_pos[number] = (x, y)
     
-    def _exist_moving_object(self, x, y):
-        # 受け取った座標に動くオブジェクト（エージェント or 敵）がいた場合、そのオブジェクトを返す
-        
-        # if (x, y) in self.agents_pos:
-        #     return self.objects['agent']
-        
-        if (x, y) in self.enemies_pos:
-            return self.objects['enemy']
-        
-        else:
-            return False
+    def get_agents_pos(self):
+        # 各エージェントの座標を返す関数
+        return self.agents_pos
     
     def get_ini_map(self):
         return self.ini_map
