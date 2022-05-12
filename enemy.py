@@ -46,7 +46,6 @@ class Enemy(MovingObject):
         
         # numpy配列に変換
         agents_pos = self._to_array(agents_pos)
-        
         for pos in agents_pos:
             if not pos[0] == None:
                 vector = pos - self.pos

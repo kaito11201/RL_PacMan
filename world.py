@@ -107,7 +107,6 @@ class World:
         # 敵の位置
         if self.recognition_dict['enemies_pos'] in self.recognition:
             state.append(tuple(self.enemies_pos))
-        
         return tuple(state)
     
     def get_reward(self, x, y):
