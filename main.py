@@ -43,10 +43,11 @@ GAMMA = .90
 
 # 視界の範囲
 SCOPE = 1
-# 認識機能の設定
+# 認識機能の一覧
 RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'agents_pos', 3: 'enemies_pos'}
 RECOGNITION_DICT.update({v: k for k, v in RECOGNITION_DICT.items()})
-RECOGNITION = [0, 1]
+# エージェントに与える認識機能の番号
+RECOGNITION = [0, 1, 2]
 
 # 報酬
 REWARDS = {'none': -1, 'dot': 5, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
@@ -121,7 +122,9 @@ def main(now):
                 for agent in agents:
                     agent.observe(agent.get_previous_state(), REWARDS['all'])
                 
+                # 行動の保存
                 completed_action_list = copy.deepcopy(action_list)
+                
                 completed_count += 1
                 completed_step_list.append(step)
                 break
