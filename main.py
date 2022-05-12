@@ -42,6 +42,10 @@ ALPHA = .1
 GAMMA = .90
 # 視界の範囲
 SCOPE = 1
+# 認識機能の設定
+RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'agents_pos', 3: 'enemies_pos'}
+RECOGNITION_DICT.update({v: k for k, v in RECOGNITION_DICT.items()})
+RECOGNITION = (0, 1)
 # 報酬
 REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 
@@ -55,7 +59,7 @@ OBJ_POS = {'none': (8,8), 'dot': (8,16), 'wall': (0,16), 'agent': (0,0), 'enemy'
 
 def main(now):
     # 環境の生成
-    world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS, SCOPE, AGENTS_POS, ENEMIES_POS)
+    world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS, RECOGNITION_DICT, RECOGNITION, SCOPE, AGENTS_POS, ENEMIES_POS)
     
     # エージェントの生成
     agents = []
@@ -234,6 +238,7 @@ def output_option(now, map):
     
     f.write("\n[option(learning)]\n")
     f.write(f"K:{K} ALPHA:{ALPHA} GAMMA:{GAMMA}\n")
+    f.write(f"RECOGNITION: {write_recognition()}\n")
     f.write(f"REWARDS:{REWARDS}\n")
     
     f.close()
@@ -273,6 +278,13 @@ def write_map(f, map):
     for y in map:
         f.write(f"{y}\n")
 
+def write_recognition():
+    # 認識機能の設定をテキストで出力する関数
+    list_ = []
+    for key in RECOGNITION:
+        list_.append(RECOGNITION_DICT[key])
+    return list_
+    
 if __name__ == "__main__":
     
     # 現在の日付と時刻を取得

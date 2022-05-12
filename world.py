@@ -5,12 +5,16 @@ import copy
 class World:
     # マップ（二次元リスト）を管理するクラス
     
-    def __init__(self, width, height, objects, actions, rewards, scope, agents_pos, enemies_pos):
+    def __init__(self, width, height, objects, actions,
+                 rewards, recognition_dict, recognition,
+                 scope, agents_pos, enemies_pos):
         self.width = width
         self.height = height
         self.objects = objects
         self.actions = actions
         self.rewards = rewards
+        self.recognition_dict = recognition_dict
+        self.recognition = recognition
         self.scope = scope
         self.agents_pos = agents_pos
         self.ini_agents_pos = agents_pos
@@ -70,33 +74,39 @@ class World:
         
         state = []
         
-        # マップに残っているドットの数
-        dot_n = self._count_dot()
-        
         # エージェントの視界
-        view = []
-        for h in range(-self.scope, self.scope + 1):
-            for w in range(-self.scope, self.scope + 1):
-                
-                if self._is_within_range(x+w, y+h):
+        if self.recognition_dict['view'] in self.recognition:
+            view = []
+            for h in range(-self.scope, self.scope + 1):
+                for w in range(-self.scope, self.scope + 1):
                     
-                    moving_object = self._exist_moving_object(x+w, y+h)
-                    
-                    if moving_object:
-                        view.append(moving_object)
-                    else:
-                        view.append(self.map[y+h, x+w])
+                    if self._is_within_range(x+w, y+h):
                         
-                else:
-                    view.append(None)
-                    
-        view = tuple(view)
+                        moving_object = self._exist_moving_object(x+w, y+h)
+                        
+                        if moving_object:
+                            view.append(moving_object)
+                        else:
+                            view.append(self.map[y+h, x+w])
+                            
+                    else:
+                        view.append(None)
+                        
+            view = tuple(view)
+            state.append(view)
         
-        # 各情報を追加
-        state.append(view)
-        # state.append(dot_n)
-        # state.append(tuple(self.agents_pos))
-        # state.append(tuple(self.enemies_pos))
+        # マップに残っているドットの数
+        if self.recognition_dict['remain_dots'] in self.recognition:
+            dot_n = self._count_dot()
+            state.append(dot_n)
+            
+        # 他エージェントの位置
+        if self.recognition_dict['agents_pos'] in self.recognition:
+            state.append(tuple(self.agents_pos))
+        
+        # 敵の位置
+        if self.recognition_dict['enemies_pos'] in self.recognition:
+            state.append(tuple(self.enemies_pos))
         
         return tuple(state)
     
