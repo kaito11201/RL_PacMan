@@ -114,10 +114,6 @@ class World:
         
         reward = 0
         
-        # # ドットをすべて回収した場合追加
-        # if self.is_completed():
-        #     reward += self.rewards['all']
-            
         moving_object = self._exist_moving_object(x, y)
         
         if moving_object:
@@ -141,7 +137,10 @@ class World:
         return np.count_nonzero(self.map == self.objects['dot'])
     
     def _exist_moving_object(self, x, y):
-        # 受け取った座標に動くオブジェクト（敵）がいた場合、そのオブジェクトを返す
+        # 受け取った座標に動くオブジェクト（エージェントと敵）がいた場合、そのオブジェクトを返す
+        
+        if (x, y) in self.agents_pos:
+            return self.objects['agent']
         
         if (x, y) in self.enemies_pos:
             return self.objects['enemy']
