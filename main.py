@@ -9,19 +9,19 @@ import datetime
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 100
+EPISODE = 2000
 # ステップ数
 STEP = 100
 
 # マップサイズ
-MAP_W = 6
-MAP_H = 6
+MAP_W = 8
+MAP_H = 8
 # オブジェクトの種類
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
 
 # エージェント数
-AGENT_N = 2
+AGENT_N = 1
 # エージェントの初期位置
 AGENTS_POS = [(1,1), (MAP_W - 2, 1)]
 
@@ -46,10 +46,10 @@ SCOPE = 1
 # 認識機能の設定
 RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'agents_pos', 3: 'enemies_pos'}
 RECOGNITION_DICT.update({v: k for k, v in RECOGNITION_DICT.items()})
-RECOGNITION = [0]
+RECOGNITION = [0, 1]
 
 # 報酬
-REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
+REWARDS = {'none': -1, 'dot': 5, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 
 #--------------------------------pyxelの設定---------------------------------#
 # ドットのサイズ
@@ -114,8 +114,13 @@ def main(now):
                     if not is_all_dead(agents):
                         action_list.append((AGENT_N + enemy.number, enemy_move(enemy, agents, world)))
             
-            # ドットを全て回収した場合終了
+            # ドットを全て回収した場合episode終了
             if world.is_completed():
+                
+                # 全てのエージェントに報酬を与える
+                for agent in agents:
+                    agent.observe(agent.get_previous_state(), REWARDS['all'])
+                
                 completed_action_list = copy.deepcopy(action_list)
                 completed_count += 1
                 completed_step_list.append(step)

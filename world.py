@@ -114,9 +114,9 @@ class World:
         
         reward = 0
         
-        # ドットをすべて回収した場合追加
-        if self.is_completed():
-            reward += self.rewards['all']
+        # # ドットをすべて回収した場合追加
+        # if self.is_completed():
+        #     reward += self.rewards['all']
             
         moving_object = self._exist_moving_object(x, y)
         
