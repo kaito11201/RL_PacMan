@@ -9,13 +9,13 @@ import datetime
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 10
+EPISODE = 100
 # ステップ数
-STEP = 500
+STEP = 100
 
 # マップサイズ
-MAP_W = 10
-MAP_H = 10
+MAP_W = 6
+MAP_H = 6
 # オブジェクトの種類
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
@@ -26,7 +26,7 @@ AGENT_N = 2
 AGENTS_POS = [(1,1), (MAP_W - 2, 1)]
 
 # 敵の数
-ENEMY_N = 2
+ENEMY_N = 1
 # 敵の初期位置
 ENEMIES_POS = [(MAP_W - 2,MAP_H - 2), (1, MAP_H - 2)]
 
@@ -35,17 +35,19 @@ ACTIONS = {'up': 0, 'down': 1, 'left': 2, 'right': 3}
 
 #-----------------------------Q学習の設定------------------------------#
 # 探索率の係数(1に近い方が良い)
-K = .99
+K = .9999
 # 学習率
 ALPHA = .1
 # 割引率
 GAMMA = .90
+
 # 視界の範囲
 SCOPE = 1
 # 認識機能の設定
 RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'agents_pos', 3: 'enemies_pos'}
 RECOGNITION_DICT.update({v: k for k, v in RECOGNITION_DICT.items()})
-RECOGNITION = (0, 1)
+RECOGNITION = [0]
+
 # 報酬
 REWARDS = {'none': -1, 'dot': 10, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
 
@@ -59,7 +61,9 @@ OBJ_POS = {'none': (8,8), 'dot': (8,16), 'wall': (0,16), 'agent': (0,0), 'enemy'
 
 def main(now):
     # 環境の生成
-    world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS, RECOGNITION_DICT, RECOGNITION, SCOPE, AGENTS_POS, ENEMIES_POS)
+    world = World(MAP_W, MAP_H, OBJECTS, ACTIONS, REWARDS,
+                  RECOGNITION_DICT, RECOGNITION, SCOPE,
+                  AGENTS_POS[:AGENT_N], ENEMIES_POS[:ENEMY_N])
     
     # エージェントの生成
     agents = []
@@ -135,8 +139,8 @@ def main(now):
     
     # 学習結果を表示
     output_result(dt_now, completed_action_list,
-                  completed_count, completed_step_list,
-                  agents, world.get_ini_map())
+                completed_count, completed_step_list,
+                agents, world.get_ini_map())
     
     # pyxelで実験の様子を描画
     if completed_action_list:
