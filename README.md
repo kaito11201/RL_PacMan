@@ -11,8 +11,6 @@
 ## 各フォルダ
 - dot_pictures: pyxelで描画するドット絵ファイルを格納するフォルダ
 - result: 実験の設定と結果、各エージェントのQテーブルを格納するフォルダ
-## 説明
-[【Python】検索機能付きの英単語帳を作ってみた【Tkinter】](https://qiita.com/kaito2140/items/9aa809a8b5e7c6088381)
 ## 実行方法
 1. リポジトリをクローン
 2. main.pyを実行
