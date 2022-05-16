@@ -99,6 +99,10 @@ class World:
         if self.recognition_dict['remain_dots'] in self.recognition:
             dot_n = self._count_dot()
             state.append(dot_n)
+        
+        # 自身の位置
+        if self.recognition_dict['pos'] in self.recognition:
+            state.append((x, y))
             
         # 他エージェントの位置
         if self.recognition_dict['agents_pos'] in self.recognition:
@@ -107,6 +111,7 @@ class World:
         # 敵の位置
         if self.recognition_dict['enemies_pos'] in self.recognition:
             state.append(tuple(self.enemies_pos))
+        
         return tuple(state)
     
     def get_reward(self, x, y):

@@ -9,7 +9,7 @@ import datetime
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 2000
+EPISODE = 100
 # ステップ数
 STEP = 100
 
@@ -21,7 +21,7 @@ OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
 
 # エージェント数
-AGENT_N = 1
+AGENT_N = 2
 # エージェントの初期位置
 AGENTS_POS = [(1,1), (MAP_W - 2, 1)]
 
@@ -44,10 +44,10 @@ GAMMA = .90
 # 視界の範囲
 SCOPE = 1
 # 認識機能の一覧
-RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'agents_pos', 3: 'enemies_pos'}
+RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'pos', 3: 'agents_pos', 4: 'enemies_pos'}
 RECOGNITION_DICT.update({v: k for k, v in RECOGNITION_DICT.items()})
 # エージェントに与える認識機能の番号
-RECOGNITION = [0, 1, 2]
+RECOGNITION = [0, 1, 2, 4]
 
 # 報酬
 REWARDS = {'none': -1, 'dot': 5, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
