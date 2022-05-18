@@ -9,21 +9,21 @@ import datetime
 
 #---------------------------------実験の設定---------------------------------#
 # エピソード数
-EPISODE = 100
+EPISODE = 100000
 # ステップ数
 STEP = 100
 
 # マップサイズ
-MAP_W = 8
-MAP_H = 8
+MAP_W = 10
+MAP_H = 10
 # オブジェクトの種類
 OBJECTS = {'none': 0, 'dot': 1, 'wall': 2, 'agent': 3, 'enemy': 4}
 OBJECTS.update({v: k for k, v in OBJECTS.items()})
 
 # エージェント数
-AGENT_N = 2
+AGENT_N = 1
 # エージェントの初期位置
-AGENTS_POS = [(1,1), (MAP_W - 2, 1)]
+AGENTS_POS = [(1,1), (MAP_W - 2, 1), (((MAP_W - 2) // 2), 1)]
 
 # 敵の数
 ENEMY_N = 1
@@ -47,7 +47,7 @@ SCOPE = 1
 RECOGNITION_DICT = {0: 'view', 1: 'remain_dots', 2: 'pos', 3: 'agents_pos', 4: 'enemies_pos'}
 RECOGNITION_DICT.update({v: k for k, v in RECOGNITION_DICT.items()})
 # エージェントに与える認識機能の番号
-RECOGNITION = [0, 1, 2, 4]
+RECOGNITION = [0]
 
 # 報酬
 REWARDS = {'none': -1, 'dot': 5, 'wall': -10, 'agent': -1, 'enemy': -50, 'all': 50}
@@ -108,12 +108,10 @@ def main(now):
                     action_list.append((agent.number, agent_move(agent, world)))
             
             # 敵の行動
-            # 2ターンに1回行動
-            if step % 2 == 1:
-                for enemy in enemies:
-                    # エージェントが死滅していない場合、行動
-                    if not is_all_dead(agents):
-                        action_list.append((AGENT_N + enemy.number, enemy_move(enemy, agents, world)))
+            for enemy in enemies:
+                # エージェントが死滅していない場合、行動
+                if not is_all_dead(agents):
+                    action_list.append((AGENT_N + enemy.number, enemy_move(enemy, agents, world)))
             
             # ドットを全て回収した場合episode終了
             if world.is_completed():
