@@ -33,8 +33,8 @@ class App:
     def _update(self):
         # エージェントの座標などを更新する関数
         
-        # [q]が押されたとき、描画開始
-        if pyxel.btnp(pyxel.KEY_Q):
+        # [space]が押されたとき、描画開始
+        if pyxel.btnp(pyxel.KEY_SPACE):
             self.is_start = False
         
         if not self.is_start:
@@ -72,7 +72,10 @@ class App:
         for enemy in self.enemies:
             x, y = enemy.get_dot_pos()
             self._draw_enemy(x, y)
-            
+        
+        # テキストの描画
+        pyxel.text(0, 0, "PRESS SPACE KEY!!", 2)
+        
     def _draw_map(self):
         # マップを描画する関数
         
