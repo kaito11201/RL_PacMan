@@ -38,6 +38,7 @@ class World:
         map[height-1, :] = self.objects['wall']
         map[:, 0] = self.objects['wall']
         map[:, width-1] = self.objects['wall']
+        
         return map
     
     def step(self, x, y, action):
