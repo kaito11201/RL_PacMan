@@ -1,7 +1,7 @@
 # RL_PacMan
 ## 環境
-- python 3.8.5
 - windows11
+- python 3.8.5
 
 ## 各ファイル
 - app.py: pyxelの設定
