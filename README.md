@@ -1,6 +1,8 @@
 # RL_PacMan
 ## 環境
 - python 3.8.5
+- windows11
+
 ## 各ファイル
 - app.py: pyxelの設定
 - agent.py: Q学習を行うエージェントの設定
