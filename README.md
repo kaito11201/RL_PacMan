@@ -13,6 +13,9 @@
 - dot_pictures: pyxelで描画するドット絵ファイルを格納するフォルダ
 - result: 実験の設定と結果、各エージェントのQテーブルを格納するフォルダ
 
+## 説明
+[【Python】複数のAIエージェントを用いてドットイートゲームをクリアしてみた【Pyxel】](https://qiita.com/kaito2140/items/7e91828bd6da3e6fc28f)
+
 ## 実行方法
 1. リポジトリをクローン
 2. main.pyを実行
